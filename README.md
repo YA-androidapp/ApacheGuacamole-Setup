@@ -10,6 +10,27 @@ Apache Guacamole を利用したリモートアクセス
 1. 社内で実施しているモブプログラミング形式の勉強会で使えそう
 1. 早速 Azure 上の VM(Windows Server 2019)に WSL を用意したうえで、Guacamole をインストールしてみた
 
+---
+
+## Apache Guacamoleとは
+
+読み方: アパッチ ワカモレ
+
+```
+Apache Guacamoleは、クライアントレス(プラグインやクライアントソフトウェアが要らない)リモートデスクトップゲートウェイで、VNC、RDP、SSHのような標準的なプロトコルに対応しています。HTML5のおかげで、いったんサーバーにGuacamoleをインストールしてしまえば、デスクトップにアクセスするために必要なのはWebブラウザだけです。
+
+https://guacamole.apache.org/
+```
+
+### 主な特徴
+
+* クライアント側にWebブラウザだけしか必要ない。アドオンすら入れる必要がないため、ソフトウェアのインストールに制約がある(社内)環境でも導入しやすく、詳しくないユーザーを招待しやすい
+* 接続可能なホストを、ユーザーやグループごとに設定できる
+* 入力されたコマンド(CUI)や、画面キャプチャの動画(GUI)を保存できるので、証跡として利用したり監査を行ったりできる
+* 1つのホストの画面を複数人で共有できる。閲覧専用にすることも、操作させることも可能
+
+* クライアント側は導入する手間がほとんどかからないが、サーバー側のセットアップが若干面倒
+
 ## 構成
 
 クライアント PC(Windows, Linux, Mac)上のモダンブラウザ → インターネット → Azure 仮想ネットワーク・NSG → Azure VM(Windows Server 2019) → WSL(Ubuntu 18.04) → Guacamole
@@ -48,13 +69,26 @@ $ sudo mysql -u root -p
 ### Guacamole
 
 [インストールスクリプト](https://github.com/MysticRyuujin/guac-install)を利用する。
+以下のコマンドのまま実行すると二要素認証(TOTP)が有効化されるので、不要であればコマンドオプション(`-n` または `--nototp`)をつけるか、スクリプトを変更する(`installTOTP=false`)
 
 ```sh
 $ wget https://git.io/fxZq5 && mv fxZq5 guac-install.sh && chmod +x guac-install.sh
 $ sudo ./guac-install.sh --mysqlpwd *** --guacpwd ***
 ```
 
-- guacadmin のパスワードを変更
+### Windows Server(リモートデスクトップ先のホスト)
+
+RDPで接続するために、レジストリを変更する [†](https://blog.happynavy.tk/guacamole-rdp-windows-10-and-windows-server-2016/)
+
+```
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp]
+"SecurityLayer"=dword:00000001
+"UserAuthentication"=dword:0x00000000
+```
+
+### ブラウザでのセットアップ
+
+- Windows Server 2019のブラウザから[アクセス](http://localhost:8080/guancamole/)して、guacadmin のパスワードを変更
 
 - localhost 接続情報を作成
 
